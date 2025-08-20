@@ -22,6 +22,7 @@ import {
 export function PasswordCreationForm({
   onSubmit,
   defaultValues,
+  isLoading = false,
 }: PasswordCreationFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);

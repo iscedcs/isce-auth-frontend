@@ -17,19 +17,21 @@ import { userDetailsSchema, type UserDetailsFormData } from "@/schemas";
 interface UserDetailsFormProps {
   onSubmit: (data: UserDetailsFormData) => void;
   defaultValues?: Partial<UserDetailsFormData>;
-  accountType: "individual" | "business";
+  accountType: "USER" | "BUSINESS_USER";
+  isLoading?: boolean;
 }
 
 export function UserDetailsForm({
   onSubmit,
   defaultValues,
+  isLoading,
   accountType,
 }: UserDetailsFormProps) {
-  const isBusinessAccount = accountType === "business";
+  const isBusinessAccount = accountType === "BUSINESS_USER";
 
   const formDefaults = isBusinessAccount
     ? ({
-        accountType: "business",
+        accountType: "BUSINESS_USER",
         firstName: "",
         lastName: "",
         phoneNumber: "",
@@ -39,7 +41,7 @@ export function UserDetailsForm({
         ...defaultValues,
       } as UserDetailsFormData)
     : ({
-        accountType: "individual",
+        accountType: "USER",
         firstName: "",
         lastName: "",
         phoneNumber: "",
@@ -55,7 +57,7 @@ export function UserDetailsForm({
   return (
     <div className="space-y-6">
       <p className="text-center text-gray-400 text-sm">
-        Enter your {isBusinessAccount ? "business" : ""} details
+        Enter your {isBusinessAccount ? "BUSINESS_USER" : ""} details
       </p>
 
       <Form {...form}>

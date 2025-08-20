@@ -8,6 +8,7 @@ interface OtpVerificationFormProps {
   onSubmit: (data: OtpVerificationFormData) => void;
   onResendCode: () => void;
   defaultValues?: OtpVerificationFormData;
+  isLoading?: boolean;
 }
 
 interface AccountTypeFormProps {
@@ -17,6 +18,7 @@ interface AccountTypeFormProps {
 interface PasswordCreationFormProps {
   onSubmit: (data: PasswordCreationFormData) => void;
   defaultValues?: PasswordCreationFormData;
+  isLoading?: boolean;
 }
 
 interface SignInFormProps {

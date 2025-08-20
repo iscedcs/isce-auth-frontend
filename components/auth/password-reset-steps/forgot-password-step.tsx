@@ -67,7 +67,8 @@ export function ForgotPasswordStep({
           Forgot your Password?
         </h2>
         <p className="text-white text-sm">
-          Enter your ID to receive an opt to reset your password.
+          Enter your email address and we'll send you a code to reset your
+          password.{" "}
         </p>
       </div>
 
@@ -100,24 +101,29 @@ export function ForgotPasswordStep({
           />
 
           {/* Phone Option */}
-          <Button
+          {/* <Button
             type="button"
             onClick={handlePhoneReset}
             disabled={isLoading || !form.getValues("email")}
             className="flex items-center w-full bg-transparent space-x-2 text-sm text-white hover:text-white disabled:opacity-50">
             <Phone size={16} />
             <span>Retrieve Using Phone Number</span>
-          </Button>
+          </Button> */}
 
           <Button
             type="submit"
-            disabled={isLoading}
-            className="w-full rounded-xl bg-white hover:bg-gray-100 text-black py-3  font-medium">
-            {isLoading ? "Sending..." : "Send Code"}
+            disabled={isLoading || !form.formState.isValid}
+            className="w-full rounded-xl bg-white hover:bg-gray-100 text-black py-3 font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+            {isLoading ? "Sending..." : "Send Reset Code"}
           </Button>
         </form>
       </Form>
 
+      <div className="text-center">
+        <p className="text-xs text-gray-500">
+          We'll send a 6-digit verification code to your email address.
+        </p>
+      </div>
       {/* Back to Login */}
       <Button
         onClick={onBackToLogin}

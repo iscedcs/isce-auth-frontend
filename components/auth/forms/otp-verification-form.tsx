@@ -18,6 +18,7 @@ export function OtpVerificationForm({
   onSubmit,
   onResendCode,
   defaultValues,
+  isLoading,
 }: OtpVerificationFormProps) {
   const form = useForm<OtpVerificationFormData>({
     resolver: zodResolver(otpVerificationSchema),

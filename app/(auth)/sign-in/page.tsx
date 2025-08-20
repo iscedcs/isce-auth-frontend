@@ -7,6 +7,8 @@ import { SignInForm } from "@/components/auth/forms/sign-in-form";
 import type { SignInFormData } from "@/schemas";
 import { PasswordResetModal } from "@/components/auth/password-reset-modal";
 import Image from "next/image";
+import { toast } from "sonner";
+import { getSession, signIn } from "next-auth/react";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -33,11 +35,52 @@ export default function SignInPage() {
   const handleSignIn = async (data: SignInFormData) => {
     setIsLoading(true);
     try {
-      console.log("Sign in data:", data);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push("/dashboard");
+      console.log("Attempting sign in with:", { email: data.email });
+
+      const result = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      console.log("Sign in result:", result);
+
+      if (result?.error) {
+        // Handle different types of errors
+        switch (result.error) {
+          case "CredentialsSignin":
+            toast.error("Invalid email or password. Please try again.");
+            break;
+          case "CallbackRouteError":
+            toast.error(
+              "Authentication failed. Please check your credentials."
+            );
+            break;
+          default:
+            toast.error("Sign in failed. Please try again.");
+        }
+        return;
+      }
+
+      if (result?.ok) {
+        // Get the session to access user data
+        const session = await getSession();
+        console.log("Session after sign in:", session);
+
+        toast.success("Welcome back!");
+
+        // Redirect based on user type or to dashboard
+        if (session?.user?.userType === "business") {
+          router.push("/business-dashboard");
+        } else {
+          router.push("/dashboard");
+        }
+      } else {
+        toast.error("Sign in failed. Please try again.");
+      }
     } catch (error) {
       console.error("Sign in error:", error);
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -47,11 +90,12 @@ export default function SignInPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      console.log("Google sign in");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push("/dashboard");
+      // Future implementation for Google OAuth
+      console.log("Google sign in - to be implemented");
+      toast.info("Google sign-in will be available soon!");
     } catch (error) {
       console.error("Google sign in error:", error);
+      toast.error("Google sign-in failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -59,11 +103,12 @@ export default function SignInPage() {
   const handleAppleSignIn = async () => {
     setIsLoading(true);
     try {
-      console.log("Apple sign in");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push("/dashboard");
+      // Future implementation for Apple OAuth
+      console.log("Apple sign in - to be implemented");
+      toast.info("Apple sign-in will be available soon!");
     } catch (error) {
       console.error("Apple sign in error:", error);
+      toast.error("Apple sign-in failed. Please try again.");
     } finally {
       setIsLoading(false);
     }

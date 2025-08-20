@@ -6,6 +6,7 @@ import Image from "next/image";
 
 interface ErrorStepProps {
   onTryAgain: () => void;
+  errorMessage?: string;
 }
 
 export function ErrorStep({ onTryAgain }: ErrorStepProps) {

@@ -45,14 +45,12 @@ export function AccountTypeForm({
                     className="space-y-4">
                     <div className="relative flex items-start space-x-4 p-4 border border-gray-700 rounded-lg cursor-pointer hover:border-gray-600 transition-colors">
                       <RadioGroupItem
-                        value="individual"
-                        id="individual"
+                        value="USER"
+                        id="USER"
                         className="peer hidden"
-                        checked={field.value === "individual"}
+                        checked={field.value === "USER"}
                       />
-                      <Label
-                        htmlFor="individual"
-                        className="flex cursor-pointer">
+                      <Label htmlFor="USER" className="flex cursor-pointer">
                         <div className="flex-1">
                           <h3 className="font-medium text-white mb-1">
                             Individual (Connect)
@@ -79,12 +77,12 @@ export function AccountTypeForm({
 
                     <div className="relative items-start space-x-4 p-4 border border-gray-700 rounded-lg cursor-pointer peer-checked:border-white peer-checked:bg-gray-900/50 hover:border-gray-600 transition-colors">
                       <RadioGroupItem
-                        value="business"
-                        id="business"
+                        value="BUSINESS_USER"
+                        id="BUSINESS_USER"
                         className="peer hidden"
-                        checked={field.value === "business"}
+                        checked={field.value === "BUSINESS_USER"}
                       />
-                      <Label htmlFor="business" className="flex ">
+                      <Label htmlFor="BUSINESS_USER" className="flex ">
                         <div className="flex-1">
                           <h3 className="font-medium text-white mb-1">
                             Business (Connect+)

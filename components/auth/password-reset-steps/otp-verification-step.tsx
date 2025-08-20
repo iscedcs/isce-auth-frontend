@@ -21,6 +21,7 @@ interface OtpVerificationStepProps {
   onResendCode: () => void;
   onBackToLogin: () => void;
   isLoading?: boolean;
+  email?: string;
 }
 
 export function OtpVerificationStep({
@@ -28,6 +29,7 @@ export function OtpVerificationStep({
   onResendCode,
   onBackToLogin,
   isLoading = false,
+  email,
 }: OtpVerificationStepProps) {
   const form = useForm<OtpVerificationFormData>({
     resolver: zodResolver(otpVerificationSchema),
@@ -36,6 +38,15 @@ export function OtpVerificationStep({
     },
   });
 
+  const getMaskedEmail = (email: string) => {
+    if (!email) return "";
+    const [localPart, domain] = email.split("@");
+    if (localPart.length <= 2) return email;
+    return `${localPart.substring(0, 2)}${"*".repeat(
+      localPart.length - 2
+    )}@${domain}`;
+  };
+
   return (
     <div className="p-8 space-y-6">
       {/* Icon */}
@@ -43,7 +54,7 @@ export function OtpVerificationStep({
         <div className="w-40 h-40 flex items-center justify-center">
           <Image
             src="/images/signpost1.png"
-            alt="Forgot Password Icon"
+            alt="OTP Verification Icon"
             width={70}
             height={70}
             className="w-full h-full"
@@ -57,8 +68,7 @@ export function OtpVerificationStep({
           Enter OTP Code
         </h2>
         <p className="text-gray-400 text-sm">
-          If you have an account, you should receive a code to reset your
-          password.
+          {`We've sent a verification code to your email address.`}
         </p>
       </div>
 
@@ -70,14 +80,20 @@ export function OtpVerificationStep({
             name="code"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-white">Enter the code</FormLabel>
+                <FormLabel className="text-white">
+                  Enter the 6-digit code
+                </FormLabel>
                 <FormControl>
                   <Input
                     {...field}
-                    placeholder="Enter code"
+                    placeholder="00000n"
                     maxLength={6}
                     disabled={isLoading}
                     className="bg-transparent border-0 border-b border-gray-600 rounded-none px-0 py-3 text-white placeholder:text-gray-500 focus:border-white focus-visible:ring-0 text-center text-lg tracking-widest"
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "");
+                      field.onChange(value);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -87,13 +103,13 @@ export function OtpVerificationStep({
 
           {/* Resend Code */}
           <div className="text-center">
-            <button
+            <Button
               type="button"
               onClick={onResendCode}
               disabled={isLoading}
               className="text-sm text-gray-400 hover:text-white underline">
-              {"Don't Receive Code? Resend Code"}
-            </button>
+              {isLoading ? "Sending..." : "Don't receive code? Resend Code"}
+            </Button>
           </div>
 
           <Button

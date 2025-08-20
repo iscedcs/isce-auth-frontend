@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const accountTypeSchema = z.object({
-  accountType: z.enum(["individual", "business"], {
+  accountType: z.enum(["USER", "BUSINESS_USER"], {
     required_error: "Please select an account type",
   }),
 });
@@ -37,11 +37,13 @@ export const baseUserDetailsSchema = z.object({
 });
 
 const individualUserDetailsSchema = baseUserDetailsSchema.extend({
-  accountType: z.literal("individual"),
+  accountType: z.literal("USER"),
+  ddress: z.string().optional(),
+  dob: z.string().optional(),
 });
 
 const businessUserDetailsSchema = baseUserDetailsSchema.extend({
-  accountType: z.literal("business"),
+  accountType: z.literal("BUSINESS_USER"),
 
   address: z
     .string({
@@ -76,7 +78,7 @@ export const otpVerificationSchema = z.object({
   code: z
     .string()
     .length(6, "Verification code must be 6 digits")
-    .regex(/^\d+$/, "Verification code must contain only numbers"),
+    .regex(/^[A-Za-z0-9]+$/, "Verification code must contain only numbers"),
 });
 
 export const passwordCreationSchema = z

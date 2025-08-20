@@ -13,7 +13,10 @@ import type {
   OtpVerificationFormData,
   PasswordCreationFormData,
 } from "@/schemas";
+import { toast } from "sonner";
 import { PasswordResetModal } from "@/components/auth/password-reset-modal";
+import { AuthService } from "@/lib/auth-service";
+import { signIn } from "@/auth";
 
 type SignupData = {
   accountType?: AccountTypeFormData;
@@ -28,6 +31,7 @@ export default function SignUpPage() {
   const [signupData, setSignupData] = useState<SignupData>({});
   const [isPasswordResetModalOpen, setIsPasswordResetModalOpen] =
     useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const cardImages = [
     "/images/_Wallet-card.png",
@@ -47,32 +51,123 @@ export default function SignUpPage() {
     setCurrentStep(2);
   };
 
-  const handleUserDetailsSubmit = (data: UserDetailsFormData) => {
+  const handleUserDetailsSubmit = async (data: UserDetailsFormData) => {
+    // Just store the data and move to next step - no API call yet
     setSignupData((prev) => ({ ...prev, userDetails: data }));
+
+    // Optionally, you can request OTP here if your backend supports it
+    // For now, we'll just move to the next step
+    toast.success(
+      "Details saved! Please check your email for verification code."
+    );
     setCurrentStep(3);
   };
 
-  const handleOtpVerificationSubmit = (data: OtpVerificationFormData) => {
-    setSignupData((prev) => ({ ...prev, otpVerification: data }));
-    setCurrentStep(4);
+  const handleOtpVerificationSubmit = async (data: OtpVerificationFormData) => {
+    if (!signupData.userDetails?.email) {
+      toast.error("Email not found. Please start over.");
+      setCurrentStep(1);
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // If your backend supports separate OTP verification, uncomment this:
+      const response = await AuthService.verifyOtp({
+        ...data,
+        email: signupData.userDetails.email,
+      });
+
+      if (!response.success) {
+        toast.error(response.message);
+        setIsLoading(false);
+        return;
+      }
+
+      // For now, just store the OTP data and move to next step
+      setSignupData((prev) => ({ ...prev, otpVerification: data }));
+      toast.success("Email verified successfully!");
+      setCurrentStep(4);
+    } catch (error) {
+      console.error("OTP verification error:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handlePasswordCreationSubmit = (data: PasswordCreationFormData) => {
-    setSignupData((prev) => ({ ...prev, passwordCreation: data }));
+  const handlePasswordCreationSubmit = async (
+    data: PasswordCreationFormData
+  ) => {
+    if (!signupData.userDetails) {
+      toast.error("User details not found. Please start over.");
+      setCurrentStep(1);
+      return;
+    }
 
-    // Here you would submit all the signup data to your API
-    console.log("Complete signup data:", {
-      ...signupData,
-      passwordCreation: data,
-    });
+    setIsLoading(true);
 
-    // Redirect to success page or dashboard
-    router.push("/dashboard");
+    try {
+      const response = await AuthService.completeSignup(
+        signupData.userDetails,
+        data
+      );
+
+      if (response.success) {
+        setSignupData((prev) => ({ ...prev, passwordCreation: data }));
+        toast.success("Account created successfully!");
+
+        const signInResult = await signIn("credentials", {
+          email: signupData.userDetails.email,
+          password: data.password,
+          redirect: false,
+        });
+
+        if (signInResult?.ok) {
+          toast.success("Welcome! Redirecting to dashboard...");
+          router.push("https://isce.tech/store");
+        } else {
+          toast.success("Account created! Please sign in.");
+          router.push("/sign-in");
+        }
+      } else {
+        toast.error(response.message);
+      }
+    } catch (error) {
+      console.error("Complete signup error:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleResendCode = () => {
-    // Implement resend OTP logic
-    console.log("Resending OTP code...");
+  const handleResendCode = async () => {
+    if (!signupData.userDetails?.email) {
+      toast.error("Email not found. Please start over.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await AuthService.requestOtp(
+        signupData.userDetails.email
+      );
+
+      if (response.success) {
+        toast.success("Verification code sent!");
+      } else {
+        toast.error(response.message);
+      }
+
+      toast.success("Verification code sent!");
+    } catch (error) {
+      console.error("Resend OTP error:", error);
+      toast.error("Failed to resend code. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getStepTitle = () => {
@@ -110,7 +205,8 @@ export default function SignUpPage() {
           <UserDetailsForm
             onSubmit={handleUserDetailsSubmit}
             defaultValues={signupData.userDetails}
-            accountType={selectedAccountType || "individual"}
+            accountType={selectedAccountType || "USER"}
+            isLoading={isLoading}
           />
         );
       case 3:
@@ -119,6 +215,7 @@ export default function SignUpPage() {
             onSubmit={handleOtpVerificationSubmit}
             onResendCode={handleResendCode}
             defaultValues={signupData.otpVerification}
+            isLoading={isLoading}
           />
         );
       case 4:
@@ -126,6 +223,7 @@ export default function SignUpPage() {
           <PasswordCreationForm
             onSubmit={handlePasswordCreationSubmit}
             defaultValues={signupData.passwordCreation}
+            isLoading={isLoading}
           />
         );
       default:

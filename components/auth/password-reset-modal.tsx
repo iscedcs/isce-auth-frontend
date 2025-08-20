@@ -12,6 +12,8 @@ import type {
   OtpVerificationFormData,
   ResetPasswordFormData,
 } from "@/schemas";
+import { AuthService } from "@/lib/auth-service";
+import { toast } from "sonner";
 
 type PasswordResetStep =
   | "forgot-password"
@@ -37,6 +39,7 @@ export function PasswordResetModal({
   const [resetData, setResetData] = useState<{
     email?: string;
     resetMethod?: "email" | "phone";
+    errorMessage?: string;
   }>({});
 
   const handleForgotPassword = async (
@@ -45,17 +48,44 @@ export function PasswordResetModal({
   ) => {
     setIsLoading(true);
     try {
-      // Here you would integrate with your password reset API
-      console.log("Forgot password data:", { ...data, method });
+      console.log("Requesting password reset:", { ...data, method });
 
-      setResetData({ email: data.email, resetMethod: method });
+      // Validate email format
+      if (!AuthService.validateEmail(data.email)) {
+        toast.error("Please enter a valid email address");
+        setIsLoading(false);
+        return;
+      }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Call the password reset API
+      const response = await AuthService.requestPasswordReset(data);
 
-      setCurrentStep("otp-verification");
+      if (response.success) {
+        setResetData({
+          email: data.email,
+          resetMethod: method,
+        });
+        toast.success(
+          response.message || "Password reset code sent to your email"
+        );
+        setCurrentStep("otp-verification");
+      } else {
+        toast.error(response.message);
+        setResetData({
+          email: data.email,
+          resetMethod: method,
+          errorMessage: response.message,
+        });
+        setCurrentStep("error");
+      }
     } catch (error) {
       console.error("Forgot password error:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+      setResetData({
+        email: data.email,
+        resetMethod: method,
+        errorMessage: "An unexpected error occurred. Please try again.",
+      });
       setCurrentStep("error");
     } finally {
       setIsLoading(false);
@@ -63,35 +93,72 @@ export function PasswordResetModal({
   };
 
   const handleOtpVerification = async (data: OtpVerificationFormData) => {
+    if (!resetData.email) {
+      toast.error("Email not found. Please start over.");
+      setCurrentStep("forgot-password");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Here you would verify the OTP with your API
-      console.log("OTP verification data:", data);
+      console.log("Verifying password reset OTP:", data);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Call the OTP verification API
+      const response = await AuthService.verifyPasswordResetOtp({
+        ...data,
+        email: resetData.email,
+      });
 
-      setCurrentStep("reset-password");
+      if (response.success) {
+        toast.success(response.message || "OTP verified successfully");
+        setCurrentStep("reset-password");
+      } else {
+        toast.error(response.message);
+        // Don't go to error step for OTP failures, let user try again
+      }
     } catch (error) {
       console.error("OTP verification error:", error);
-      setCurrentStep("error");
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResetPassword = async (data: ResetPasswordFormData) => {
+    if (!resetData.email) {
+      toast.error("Email not found. Please start over.");
+      setCurrentStep("forgot-password");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Here you would reset the password with your API
-      console.log("Reset password data:", data);
+      console.log("Resetting password");
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Call the reset password API
+      const response = await AuthService.resetPassword({
+        ...data,
+        email: resetData.email,
+      });
 
-      setCurrentStep("success");
+      if (response.success) {
+        toast.success(response.message || "Password reset successfully");
+        setCurrentStep("success");
+      } else {
+        toast.error(response.message);
+        setResetData({
+          ...resetData,
+          errorMessage: response.message,
+        });
+        setCurrentStep("error");
+      }
     } catch (error) {
       console.error("Reset password error:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+      setResetData({
+        ...resetData,
+        errorMessage: "An unexpected error occurred. Please try again.",
+      });
       setCurrentStep("error");
     } finally {
       setIsLoading(false);
@@ -99,15 +166,29 @@ export function PasswordResetModal({
   };
 
   const handleResendCode = async () => {
+    if (!resetData.email) {
+      toast.error("Email not found. Please start over.");
+      setCurrentStep("forgot-password");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Here you would resend the OTP
-      console.log("Resending OTP to:", resetData.email);
+      console.log("Resending password reset code to:", resetData.email);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Call the password reset API again
+      const response = await AuthService.requestPasswordReset({
+        email: resetData.email,
+      });
+
+      if (response.success) {
+        toast.success("Password reset code sent again");
+      } else {
+        toast.error(response.message);
+      }
     } catch (error) {
       console.error("Resend code error:", error);
+      toast.error("Failed to resend code. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -147,6 +228,7 @@ export function PasswordResetModal({
             onResendCode={handleResendCode}
             onBackToLogin={handleBackToLogin}
             isLoading={isLoading}
+            email={resetData.email}
           />
         );
       case "reset-password":
@@ -159,7 +241,12 @@ export function PasswordResetModal({
       case "success":
         return <SuccessStep onLogin={handleLoginSuccess} />;
       case "error":
-        return <ErrorStep onTryAgain={handleTryAgain} />;
+        return (
+          <ErrorStep
+            onTryAgain={handleTryAgain}
+            errorMessage={resetData.errorMessage}
+          />
+        );
       default:
         return null;
     }
