@@ -38,7 +38,7 @@ export const baseUserDetailsSchema = z.object({
 
 const individualUserDetailsSchema = baseUserDetailsSchema.extend({
   accountType: z.literal("USER"),
-  ddress: z.string().optional(),
+  address: z.string().optional(),
   dob: z.string().optional(),
 });
 
@@ -78,7 +78,7 @@ export const otpVerificationSchema = z.object({
   code: z
     .string()
     .length(6, "Verification code must be 6 digits")
-    .regex(/^[A-Za-z0-9]+$/, "Verification code must contain only numbers"),
+    .regex(/^[a-zA-Z0-9]+$/, "Verification code must contain only numbers"),
 });
 
 export const passwordCreationSchema = z
@@ -117,7 +117,7 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z
   .object({
-    password: z
+    newPassword: z
       .string()
       .min(8, "Password must be at least 8 characters")
       .regex(/[a-z]/, "Password must contain at least one lowercase letter")
@@ -129,10 +129,23 @@ export const resetPasswordSchema = z
       ),
     confirmPassword: z.string(),
   })
-  .refine((data) => data.password === data.confirmPassword, {
+  .refine((data) => data.newPassword === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
   });
+
+export const resetPasswordWithCodeSchema = z.intersection(
+  resetPasswordSchema,
+  z.object({
+    resetCode: z
+      .string({
+        required_error: "Reset code is required",
+      })
+      .min(6, "Reset code must be at least 6 characters")
+      .max(100, "Reset code is too long")
+      .trim(),
+  })
+);
 
 export type AccountTypeFormData = z.infer<typeof accountTypeSchema>;
 export type UserDetailsFormData = z.infer<typeof userDetailsSchema>;
@@ -141,3 +154,6 @@ export type PasswordCreationFormData = z.infer<typeof passwordCreationSchema>;
 export type SignInFormData = z.infer<typeof signInSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
+export type ResetPasswordWithCodeFormData = z.infer<
+  typeof resetPasswordWithCodeSchema
+>;

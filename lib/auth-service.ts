@@ -4,6 +4,7 @@ import {
   OtpVerificationFormData,
   PasswordCreationFormData,
   ResetPasswordFormData,
+  ResetPasswordWithCodeFormData,
   UserDetailsFormData,
 } from "@/schemas";
 import axios from "axios";
@@ -296,75 +297,32 @@ export class AuthService {
     }
   }
 
-  // Step 2: Verify password reset OTP
-  static async verifyPasswordResetOtp(
-    otpData: OtpVerificationFormData & { email: string }
-  ): Promise<OtpResponse> {
-    // Use the same verify OTP endpoint or create a specific one for password reset
-    const url = `${this.baseUrl}${URLS.auth.verify_otp}`;
-
-    try {
-      console.log("Verifying password reset OTP for:", otpData.email);
-
-      const response = await axios.post(
-        url,
-        {
-          email: otpData.email,
-          code: otpData.code,
-        },
-        {
-          timeout: 10000,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      console.log("Password reset OTP verification response:", response.data);
-
-      return {
-        success: true,
-        message: response.data.message || "OTP verified successfully",
-        data: {
-          verified: true,
-        },
-      };
-    } catch (error: any) {
-      console.error(
-        "Password reset OTP verification error:",
-        error.response?.data || error.message
-      );
-
-      return {
-        success: false,
-        message: error.response?.data?.message || "Invalid or expired OTP",
-      };
-    }
-  }
-
-  // Step 3: Reset password with new password
-  static async resetPassword(
-    resetData: ResetPasswordFormData & { email: string }
+  static async resetPasswordWithCode(
+    resetCode: string,
+    newPassword: string
   ): Promise<ResetPasswordResponse> {
     const url = `${this.baseUrl}${URLS.auth.reset_password}`;
 
     try {
-      console.log("Resetting password for:", resetData.email);
+      console.log("Resetting password with resetCode");
+      console.log("ResetCode length:", resetCode.length);
+      console.log("ResetCode type:", typeof resetCode);
 
-      const response = await axios.post(
-        url,
-        {
-          email: resetData.email,
-          password: resetData.password,
-          confirmPassword: resetData.confirmPassword, // Use the correct field name
+      // Prepare payload according to backend specification
+      const payload: ResetPasswordWithCodeFormData = {
+        resetCode: resetCode.trim(),
+        newPassword: newPassword,
+        confirmPassword: newPassword,
+      };
+
+      console.log("Reset password payload:", payload);
+
+      const response = await axios.post(url, payload, {
+        timeout: 10000,
+        headers: {
+          "Content-Type": "application/json",
         },
-        {
-          timeout: 10000,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      });
 
       console.log("Password reset response:", response.data);
 
@@ -386,6 +344,74 @@ export class AuthService {
         message: error.response?.data?.message || "Failed to reset password",
       };
     }
+  }
+
+  // Step 2: Verify password reset OTP
+  // DEPRECATED: No longer needed for password reset flow
+  // (Keep for signup flow if still needed)
+  static async verifyPasswordResetOtp(
+    otpData: OtpVerificationFormData & { email: string }
+  ): Promise<OtpResponse> {
+    console.warn(
+      "⚠️ verifyPasswordResetOtp is deprecated for password reset flow"
+    );
+    console.warn("⚠️ Use resetPasswordWithCode instead");
+
+    // This method is no longer needed for password reset
+    // The resetCode is verified directly in the resetPasswordWithCode method
+    return {
+      success: false,
+      message: "This method is deprecated. Use resetPasswordWithCode instead.",
+    };
+  }
+
+  // DEPRECATED: No longer needed for password reset flow
+  static async resetPassword(
+    resetData: ResetPasswordFormData & { email: string }
+  ): Promise<ResetPasswordResponse> {
+    console.warn("⚠️ resetPassword is deprecated for password reset flow");
+    console.warn("⚠️ Use resetPasswordWithCode instead");
+
+    // This method is no longer needed for password reset
+    // Use resetPasswordWithCode instead
+    return {
+      success: false,
+      message: "This method is deprecated. Use resetPasswordWithCode instead.",
+    };
+  }
+
+  // Helper method to validate reset code format
+  static validateResetCode(code: string): {
+    isValid: boolean;
+    issues: string[];
+  } {
+    const issues: string[] = [];
+
+    if (!code) {
+      issues.push("Code is empty");
+    }
+
+    if (typeof code !== "string") {
+      issues.push(`Code is not a string (type: ${typeof code})`);
+    }
+
+    const cleanCode = String(code).trim();
+
+    // Reset codes are typically longer than OTP codes
+    if (cleanCode.length < 6) {
+      issues.push(
+        `Code length is ${cleanCode.length}, expected at least 6 characters`
+      );
+    }
+
+    if (cleanCode.length > 100) {
+      issues.push(`Code length is ${cleanCode.length}, seems too long`);
+    }
+
+    return {
+      isValid: issues.length === 0,
+      issues,
+    };
   }
 
   // Helper method to get user profile after successful authentication
@@ -418,7 +444,7 @@ export const {
   verifyOtp,
   setPassword,
   requestPasswordReset,
-  verifyPasswordResetOtp,
-  resetPassword,
+  resetPasswordWithCode,
+  validateResetCode,
   getUserProfile,
 } = AuthService;

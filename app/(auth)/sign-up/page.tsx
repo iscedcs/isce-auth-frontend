@@ -16,7 +16,7 @@ import type {
 import { toast } from "sonner";
 import { PasswordResetModal } from "@/components/auth/password-reset-modal";
 import { AuthService } from "@/lib/auth-service";
-import { signIn } from "@/auth";
+import { signIn } from "next-auth/react";
 
 type SignupData = {
   accountType?: AccountTypeFormData;
@@ -52,8 +52,27 @@ export default function SignUpPage() {
   };
 
   const handleUserDetailsSubmit = async (data: UserDetailsFormData) => {
+    let userDetails: SignupData["userDetails"];
+
+    if ((signupData.accountType?.accountType || "USER") === "BUSINESS_USER") {
+      userDetails = {
+        ...data,
+        accountType: "BUSINESS_USER" as const,
+        address: data.address ?? "",
+        dob: data.dob ?? "",
+      };
+    } else {
+      userDetails = {
+        ...data,
+        accountType: "USER" as const,
+        dob: data.dob ?? "",
+      };
+    }
     // Just store the data and move to next step - no API call yet
-    setSignupData((prev) => ({ ...prev, userDetails: data }));
+    setSignupData((prev) => ({
+      ...prev,
+      userDetails,
+    }));
 
     // Optionally, you can request OTP here if your backend supports it
     // For now, we'll just move to the next step

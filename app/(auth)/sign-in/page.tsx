@@ -63,13 +63,11 @@ export default function SignInPage() {
       }
 
       if (result?.ok) {
-        // Get the session to access user data
         const session = await getSession();
         console.log("Session after sign in:", session);
 
         toast.success("Welcome back!");
 
-        // Redirect based on user type or to dashboard
         if (session?.user?.userType === "business") {
           router.push("/business-dashboard");
         } else {

@@ -184,6 +184,13 @@ export function UserDetailsForm({
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="accountType"
+                render={({ field }) => (
+                  <input type="hidden" {...field} value={accountType} />
+                )}
+              />
             </>
           )}
           <div className="flex items-center space-x-2 text-sm text-gray-400">

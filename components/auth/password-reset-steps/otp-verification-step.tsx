@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { otpVerificationSchema, type OtpVerificationFormData } from "@/schemas";
 import Image from "next/image";
+import { useState } from "react";
 
 interface OtpVerificationStepProps {
   onSubmit: (data: OtpVerificationFormData) => void;
@@ -31,6 +32,8 @@ export function OtpVerificationStep({
   isLoading = false,
   email,
 }: OtpVerificationStepProps) {
+  const [isResending, setIsResending] = useState(false);
+
   const form = useForm<OtpVerificationFormData>({
     resolver: zodResolver(otpVerificationSchema),
     defaultValues: {
@@ -41,10 +44,32 @@ export function OtpVerificationStep({
   const getMaskedEmail = (email: string) => {
     if (!email) return "";
     const [localPart, domain] = email.split("@");
-    if (localPart.length <= 2) return email;
-    return `${localPart.substring(0, 2)}${"*".repeat(
-      localPart.length - 2
+    if (localPart.length <= 3) return email;
+    return `${localPart.substring(0, 3)}${"*".repeat(
+      localPart.length - 3
     )}@${domain}`;
+  };
+
+  const handleResendCode = async () => {
+    console.log("=== RESEND CODE DEBUG ===");
+    console.log("Resend button clicked - NOT continue button");
+    console.log("isLoading (Continue):", isLoading);
+    console.log("isResending (Resend):", isResending);
+
+    if (isResending || isLoading) {
+      console.log("Resend blocked - already in progress");
+      return;
+    }
+
+    setIsResending(true);
+
+    try {
+      await onResendCode();
+    } catch (error) {
+      console.error("Resend code error:", error);
+    } finally {
+      setIsResending(false);
+    }
   };
 
   return (
@@ -70,6 +95,12 @@ export function OtpVerificationStep({
         <p className="text-gray-400 text-sm">
           {`We've sent a verification code to your email address.`}
         </p>
+        {email && (
+          <div className="flex items-center justify-center space-x-2 text-sm text-gray-300">
+            <Mail className="w-4 h-4" />
+            <span>{getMaskedEmail(email)}</span>
+          </div>
+        )}
       </div>
 
       {/* Form */}
@@ -86,7 +117,7 @@ export function OtpVerificationStep({
                 <FormControl>
                   <Input
                     {...field}
-                    placeholder="00000n"
+                    placeholder="123456"
                     maxLength={6}
                     disabled={isLoading}
                     className="bg-transparent border-0 border-b border-gray-600 rounded-none px-0 py-3 text-white placeholder:text-gray-500 focus:border-white focus-visible:ring-0 text-center text-lg tracking-widest"
@@ -105,30 +136,31 @@ export function OtpVerificationStep({
           <div className="text-center">
             <Button
               type="button"
-              onClick={onResendCode}
-              disabled={isLoading}
+              onClick={handleResendCode}
+              disabled={isResending || isLoading}
               className="text-sm text-gray-400 hover:text-white underline">
-              {isLoading ? "Sending..." : "Don't receive code? Resend Code"}
+              {isResending
+                ? "Sending new code..."
+                : "Don't receive code? Resend Code"}
             </Button>
           </div>
 
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || isResending}
             className="w-full bg-white hover:bg-gray-100 text-black py-3 rounded-lg font-medium">
-            {isLoading ? "Verifying..." : "Continue"}
+            {"Continue"}
           </Button>
         </form>
       </Form>
 
-      {/* Back to Login */}
-      <button
+      <Button
         onClick={onBackToLogin}
-        disabled={isLoading}
+        disabled={isLoading || isResending}
         className="flex items-center justify-center space-x-2 text-sm text-gray-400 hover:text-white w-full">
         <ArrowLeft size={16} />
         <span>Back to Login</span>
-      </button>
+      </Button>
     </div>
   );
 }

@@ -40,7 +40,36 @@ export function PasswordResetModal({
     email?: string;
     resetMethod?: "email" | "phone";
     errorMessage?: string;
+    resetCode?: string;
   }>({});
+
+  const handleOtpVerification = async (data: OtpVerificationFormData) => {
+    setIsLoading(true);
+    try {
+      console.log("Captured OTP code:", data.code);
+
+      const validation = AuthService.validateResetCode(data.code);
+      if (!validation.isValid) {
+        toast.error(`Invalid OTP code: ${validation.issues.join(", ")}`);
+        setIsLoading(false);
+        return;
+      }
+
+      setResetData({ ...resetData, resetCode: data.code });
+      toast.success("OTP code received, please set your new password");
+      setCurrentStep("reset-password");
+    } catch (error) {
+      console.error("OTP verification error:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+      setResetData({
+        ...resetData,
+        errorMessage: "An unexpected error occurred. Please try again.",
+      });
+      setCurrentStep("error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleForgotPassword = async (
     data: ForgotPasswordFormData,
@@ -68,7 +97,7 @@ export function PasswordResetModal({
         toast.success(
           response.message || "Password reset code sent to your email"
         );
-        setCurrentStep("otp-verification");
+        setCurrentStep("reset-password");
       } else {
         toast.error(response.message);
         setResetData({
@@ -92,54 +121,28 @@ export function PasswordResetModal({
     }
   };
 
-  const handleOtpVerification = async (data: OtpVerificationFormData) => {
-    if (!resetData.email) {
-      toast.error("Email not found. Please start over.");
-      setCurrentStep("forgot-password");
-      return;
-    }
-
+  const handleResetPassword = async (
+    data: ResetPasswordFormData & { resetCode: string }
+  ) => {
     setIsLoading(true);
     try {
-      console.log("Verifying password reset OTP:", data);
+      console.log("Resetting password with code");
+      console.log("Reset code length:", data.resetCode.length);
+      console.log("Email:", resetData.email);
 
-      // Call the OTP verification API
-      const response = await AuthService.verifyPasswordResetOtp({
-        ...data,
-        email: resetData.email,
-      });
-
-      if (response.success) {
-        toast.success(response.message || "OTP verified successfully");
-        setCurrentStep("reset-password");
-      } else {
-        toast.error(response.message);
-        // Don't go to error step for OTP failures, let user try again
+      // Validate reset code
+      const validation = AuthService.validateResetCode(data.resetCode);
+      if (!validation.isValid) {
+        toast.error(`Invalid reset code: ${validation.issues.join(", ")}`);
+        setIsLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error("OTP verification error:", error);
-      toast.error("An unexpected error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleResetPassword = async (data: ResetPasswordFormData) => {
-    if (!resetData.email) {
-      toast.error("Email not found. Please start over.");
-      setCurrentStep("forgot-password");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      console.log("Resetting password");
-
-      // Call the reset password API
-      const response = await AuthService.resetPassword({
-        ...data,
-        email: resetData.email,
-      });
+      // Call the reset password API with resetCode
+      const response = await AuthService.resetPasswordWithCode(
+        data.resetCode,
+        data.newPassword
+      );
 
       if (response.success) {
         toast.success(response.message || "Password reset successfully");
@@ -153,7 +156,7 @@ export function PasswordResetModal({
         setCurrentStep("error");
       }
     } catch (error) {
-      console.error("Reset password error:", error);
+      console.error("Reset password with code error:", error);
       toast.error("An unexpected error occurred. Please try again.");
       setResetData({
         ...resetData,
@@ -176,7 +179,6 @@ export function PasswordResetModal({
     try {
       console.log("Resending password reset code to:", resetData.email);
 
-      // Call the password reset API again
       const response = await AuthService.requestPasswordReset({
         email: resetData.email,
       });
@@ -236,6 +238,9 @@ export function PasswordResetModal({
           <ResetPasswordStep
             onSubmit={handleResetPassword}
             isLoading={isLoading}
+            email={resetData.email}
+            resetCode={resetData.resetCode}
+            showResetCodeField={true}
           />
         );
       case "success":

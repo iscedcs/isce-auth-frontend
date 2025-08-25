@@ -115,7 +115,12 @@ export function AccountTypeForm({
 
           <Button
             type="submit"
-            className="w-full bg-gray-600 hover:bg-gray-500 text-white py-3 rounded-lg">
+            disabled={!form.watch("accountType")}
+            className={`w-full py-3 rounded-lg ${
+              form.watch("accountType")
+                ? "bg-white text-black hover:bg-gray-200"
+                : "bg-gray-600 text-white opacity-50 cursor-not-allowed"
+            }`}>
             Continue
           </Button>
         </form>
