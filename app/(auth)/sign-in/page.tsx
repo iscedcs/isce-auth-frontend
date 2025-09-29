@@ -1,5 +1,4 @@
 import SignInClient from "@/components/signincontext";
-import SignUpClient from "@/components/signupcontext";
 import { Suspense } from "react";
 
 export default function Page({
