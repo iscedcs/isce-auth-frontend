@@ -53,7 +53,7 @@ export function AccountTypeForm({
                       <Label htmlFor="USER" className="flex cursor-pointer">
                         <div className="flex-1">
                           <h3 className="font-medium text-white mb-1">
-                            Individual (Connect)
+                            Individual
                           </h3>
                           <p className="text-sm text-gray-400">
                             Perfect for personal use. Get access to basic
@@ -85,7 +85,7 @@ export function AccountTypeForm({
                       <Label htmlFor="BUSINESS_USER" className="flex ">
                         <div className="flex-1">
                           <h3 className="font-medium text-white mb-1">
-                            Business (Connect+)
+                            Business
                           </h3>
                           <p className="text-sm text-gray-400">
                             Ideal for businesses. Includes advanced features and

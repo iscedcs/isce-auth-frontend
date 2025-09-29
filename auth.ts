@@ -18,7 +18,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       );
 
       if (user) {
-        // First time JWT callback is invoked, user object is available
         token.id = user.id;
         token.email = user.email;
         token.firstName = user.firstName;
@@ -34,7 +33,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       console.log("Session Callback - Token:", token, "Session:", session);
 
       if (token && session.user) {
-        // Send properties to the client
         session.user.id = token.id as string;
         session.user.email = token.email as string;
         session.user.firstName = token.firstName as string;
@@ -47,17 +45,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
 
     async redirect({ url, baseUrl }) {
-      console.log("Redirect Callback - URL:", url, "BaseURL:", baseUrl);
+      try {
+        console.log("Redirect Callback - URL:", url, "BaseURL:", baseUrl);
+        const u = new URL(url, baseUrl);
+        const q =
+          u.searchParams.get("callbackUrl") ||
+          u.searchParams.get("redirect") ||
+          u.searchParams.get("redirect_uri");
 
-      // Handle sign-in redirects
-      if (url.startsWith("/")) {
-        return `${baseUrl}${url}`;
-      } else if (new URL(url).origin === baseUrl) {
-        return url;
+        const allowed = (process.env.NEXT_PUBLIC_ALLOWED_APP_ORIGINS ?? "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        if (q) {
+          const target = new URL(q, baseUrl);
+          if (target.origin === baseUrl || allowed.includes(target.origin)) {
+            return target.toString();
+          }
+        }
+
+        if (u.origin === baseUrl) return u.toString();
+
+        if (allowed.includes(u.origin)) return u.toString();
+      } catch (error) {
+        console.log(error);
       }
-
-      // Default redirect to dashboard after successful sign-in
-      return `${baseUrl}/dashboard`;
+      return `${baseUrl}/sign-in`;
     },
 
     async signIn({ user, account, profile, email, credentials }) {

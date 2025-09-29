@@ -1,6 +1,7 @@
 import type React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -19,6 +20,17 @@ export function AuthLayout({
   currentSlide,
   setCurrentSlide,
 }: AuthLayoutProps) {
+  const searchParams = useSearchParams();
+
+  const redirectParam =
+    searchParams.get("callbackUrl") ||
+    searchParams.get("redirect") ||
+    searchParams.get("returnTo") ||
+    searchParams.get("redirect_uri");
+
+  const signUpHref = redirectParam
+    ? `/sign-in?redirect=${encodeURIComponent(redirectParam)}`
+    : "/";
   return (
     <div className="h-screen border-8 border-white bg-black flex rounded-[20px] overflow-hidden">
       {/* Left Panel */}
@@ -106,7 +118,7 @@ export function AuthLayout({
           <button className="text-2xl font-bold">||</button>
           <span className="text-gray-400 text-sm">
             Already have an account?{" "}
-            <Link href="/sign-in" className="text-white underline">
+            <Link href={signUpHref} className="text-white underline">
               Login
             </Link>
           </span>
