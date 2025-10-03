@@ -10,6 +10,7 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { getSession, signIn } from "next-auth/react";
 import { getSafeRedirect } from "@/lib/safe-redirect";
+import CountryFlag from "@/shared/country-flag";
 
 type Props = { callbackUrl: string | null };
 
@@ -130,13 +131,7 @@ export default function SignInClient({ callbackUrl }: Props) {
       <div className="hidden lg:flex lg:w-[40%] flex-col justify-center items-center p-8 relative bg-gradient-to-b from-[#0a0a0a] to-[#1a1a1a] rounded-l-[12px] border-r-8 border-white">
         <div className="absolute top-6 right-6">
           <button className="bg-gray-900  border-white rounded-full px-3 py-1 text-white text-xs flex items-center space-x-1 border">
-            <Image
-              src="/images/flag-uk.png"
-              alt="Language"
-              width={16}
-              height={16}
-              className="rounded-full"
-            />
+            <CountryFlag />
             <span>EN</span>
           </button>
         </div>
