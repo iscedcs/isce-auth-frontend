@@ -1,15 +1,16 @@
 import SignUpClient from "@/components/signupcontext";
 import { Suspense } from "react";
 
-export default function Page({
+export default async function Page({
   searchParams,
 }: {
-  searchParams: Record<string, string | string[] | undefined>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const params = await searchParams;
   const callbackUrl =
-    (searchParams.callbackUrl as string) ??
-    (searchParams.redirect as string) ??
-    (searchParams.redirect_uri as string) ??
+    (params.callbackUrl as string) ??
+    (params.redirect as string) ??
+    (params.redirect_uri as string) ??
     null;
 
   return (
